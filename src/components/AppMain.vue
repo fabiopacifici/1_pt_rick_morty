@@ -1,36 +1,57 @@
 <script>
 import axios from 'axios';
 import CharacterItem from './CharacterItem.vue';
+import LoadingIcon from './LoadingIcon.vue';
 export default {
   name: 'AppMain',
   components: {
-    CharacterItem
+    CharacterItem,
+    LoadingIcon
   },
   data() {
     return {
       base_api_url: 'https://rickandmortyapi.com/api/character',
       characters: [],
+      loading: true,
       error: false
     }
   },
-  mounted() {
+  methods: {
+    getCharacters(url) {
+      axios
+        .get(url)
+        .then((response) => {
+          console.log(response);
+          console.log(response.data); // All data including pagination info
+          console.log(response.data.results); // Only characters results
+          //console.log(this); 
+          this.characters = response.data;
+          this.loading = false;
 
-    console.log(this.base_api_url);
-    axios
-      .get('https://rickandmortyapi.com/api/character')
-      .then((response) => {
-        console.log(response);
-        console.log(response.data); // All data including pagination info
-        console.log(response.data.results); // Only characters results
-        //console.log(this); 
-        this.characters = response.data;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.error = error.message;
+        })
+    }
+  },
+  computed: {
+    getResults() {
+      //console.log(this.characters);
+      return this.characters.results ? 'Total results:' + this.characters.results.length : 'no results yet'// 20
+    }
+  },
+  created() {
+    this.getCharacters(this.base_api_url)
 
-      })
-      .catch((error) => {
-        console.error(error);
-        this.error = error.message;
-      })
+    // Use a timeout to test your loading icon
+    // the timeout is used for slow down the request and 
+    // simulate a slow network request
+    // disable the time out once the loader is ready
+/*     setTimeout(() => {
+      this.getCharacters(this.base_api_url)
 
+    }, 3000) */
   }
 }
 </script>
@@ -56,13 +77,19 @@ export default {
       </div>
 
 
-      <div class="row">
+      <div class="row" v-if="!loading">
 
         <CharacterItem v-for="character in characters.results" :key="character.id + '_character'" :character="character">
         </CharacterItem>
 
       </div>
       <!-- /.row -->
+      <LoadingIcon v-else></LoadingIcon>
+
+      <div>
+        {{ getResults }}
+      </div>
+
     </div>
     <!-- /.container -->
 
