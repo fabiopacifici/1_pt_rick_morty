@@ -1,57 +1,46 @@
 <script>
-import axios from 'axios';
+import {store} from '../store.js';
 import CharacterItem from './CharacterItem.vue';
 import LoadingIcon from './LoadingIcon.vue';
+import ResultsFilter from './ResultsFilter.vue';
+import TotalResults from './TotalResults.vue';
 export default {
   name: 'AppMain',
   components: {
     CharacterItem,
-    LoadingIcon
+    LoadingIcon,
+    ResultsFilter,
+    TotalResults
   },
   data() {
     return {
-      base_api_url: 'https://rickandmortyapi.com/api/character',
-      characters: [],
-      loading: true,
-      error: false
+      store,
     }
   },
   methods: {
-    getCharacters(url) {
-      axios
-        .get(url)
-        .then((response) => {
-          console.log(response);
-          console.log(response.data); // All data including pagination info
-          console.log(response.data.results); // Only characters results
-          //console.log(this); 
-          this.characters = response.data;
-          this.loading = false;
+    filterResults(data) {
+      console.log('filtered', data);
+      const [searchText, selectedStatus] = data;
+      //?name=rick&status=dead
+      const url = `${store.base_api_url}?name=${searchText}&status=${selectedStatus}`;
+      console.log(url);
 
-        })
-        .catch((error) => {
-          console.error(error);
-          this.error = error.message;
-        })
+      store.getCharacters(url);
+
     }
   },
-  computed: {
-    getResults() {
-      //console.log(this.characters);
-      return this.characters.results ? 'Total results:' + this.characters.results.length : 'no results yet'// 20
-    }
-  },
+
   created() {
-    this.getCharacters(this.base_api_url)
+    store.getCharacters(store.base_api_url)
 
     // Use a timeout to test your loading icon
     // the timeout is used for slow down the request and 
     // simulate a slow network request
     // disable the time out once the loader is ready
-/*     setTimeout(() => {
-      this.getCharacters(this.base_api_url)
-
-    }, 3000) */
+    /*     setTimeout(() => {
+          this.getCharacters(this.base_api_url)
+    
+        }, 3000) */
   }
 }
 </script>
@@ -63,32 +52,19 @@ export default {
     <div class="container">
 
 
-      <div class="filters">
-        <!-- add name filter input -->
-        <input type="text" placeholder="Type a name to search">
-        <!-- add a select status filter -->
-        <select name="status" id="status">
-          <option value="" selected>All</option>
-          <option value="alive">Alive</option>
-          <option value="death">Death</option>
-          <option value="unkown">Unknown</option>
+      <ResultsFilter @filtered="filterResults"></ResultsFilter>
+      <div v-if="store.error" style="color:red">{{ store.error }}</div>
 
-        </select>
-      </div>
+      <div class="row" v-if="!store.loading">
 
-
-      <div class="row" v-if="!loading">
-
-        <CharacterItem v-for="character in characters.results" :key="character.id + '_character'" :character="character">
+        <CharacterItem v-for="character in store.characters.results" :key="character.id + '_character'" :character="character">
         </CharacterItem>
 
       </div>
       <!-- /.row -->
       <LoadingIcon v-else></LoadingIcon>
 
-      <div>
-        {{ getResults }}
-      </div>
+      <TotalResults></TotalResults>
 
     </div>
     <!-- /.container -->
